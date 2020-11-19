@@ -39,7 +39,7 @@ get_user_selection_webui(){
   done
 }
 
-install_mainsail(){
+install_routine_klipper_ui(){
   get_user_selection_webui
   #check if moonraker is already installed
   check_moonraker
@@ -48,32 +48,13 @@ install_mainsail(){
     unset SET_LISTEN_PORT
     detect_enabled_sites
     #check if another site already listens to port 80
-    mainsail_port_check
+    $1_port_check
     #creating the mainsail nginx cfg
-    set_nginx_cfg "mainsail"
+    set_nginx_cfg $1
     #test_nginx "$SET_LISTEN_PORT"
-    locate_printer_cfg && read_printer_cfg "mainsail"
+    locate_printer_cfg && read_printer_cfg $1
     install_webui_macros
-    mainsail_setup
-  fi
-}
-
-install_fluidd(){
-  get_user_selection_webui
-  #check if moonraker is already installed
-  check_moonraker
-  if [ "$MOONRAKER_SERVICE_FOUND" = "true" ]; then
-    #check for other enabled web interfaces
-    unset SET_LISTEN_PORT
-    detect_enabled_sites
-    #check if another site already listens to port 80
-    fluidd_port_check
-    #creating the fluidd nginx cfg
-    set_nginx_cfg "fluidd"
-    #test_nginx "$SET_LISTEN_PORT"
-    locate_printer_cfg && read_printer_cfg "fluidd"
-    install_webui_macros
-    fluidd_setup
+    select_klipper_ui $1 && install_klipper_ui
   fi
 }
 
@@ -195,57 +176,37 @@ select_fluidd_port(){
   fi
 }
 
-get_mainsail_ver(){
-  MAINSAIL_VERSION=$(curl -s https://api.github.com/repositories/240875926/releases | grep tag_name | cut -d'"' -f4 | cut -d"v" -f2 | head -1)
+select_klipper_ui(){
+  [[ $1 == mainsail ]] && ui="mainsail" && ui_repo_id="240875926" && ui_dir=${HOME}/$1
+  [[ $1 == fluidd ]] && ui="fluidd" && ui_repo_id="295836951" && ui_dir=${HOME}/$1
+  #[[ $1 == dwc2 ]] && ui="dwc2" && ui_repo_id="28820678" && ui_dir=${HOME}/sdcard/web
+  ui_repo="https://api.github.com/repositories/$ui_repo_id/releases"
 }
 
-get_fluidd_ver(){
-  FLUIDD_VERSION=$(curl -s https://api.github.com/repositories/295836951/releases | grep tag_name | cut -d'"' -f4 | cut -d"v" -f2 | head -1)
+get_klipper_ui_version(){
+  ui_version=$(curl -s $ui_repo | grep tag_name | cut -d'"' -f4 | cut -d"v" -f2 | head -1)
 }
 
-mainsail_setup(){
-  #get mainsail download url
-  MAINSAIL_DL_URL=$(curl -s https://api.github.com/repositories/240875926/releases | grep browser_download_url | cut -d'"' -f4 | head -1)
-  #clean up an existing mainsail folder
-  [ -d $MAINSAIL_DIR ] && rm -rf $MAINSAIL_DIR
-  #create fresh mainsail folder and download mainsail
-  mkdir $MAINSAIL_DIR && cd $MAINSAIL_DIR
-  status_msg "Downloading Mainsail $MAINSAIL_VERSION ..."
-  wget $MAINSAIL_DL_URL && ok_msg "Download complete!"
-  #extract archive
+install_klipper_ui(){
+  get_klipper_ui_version
+  #download urls
+  ui_dl_url=$(curl -s $ui_repo | grep browser_download_url | cut -d'"' -f4 | head -1)
+  #installation
+  [ -d $ui_dir ] && rm -rf $ui_dir
+  [ ! -d $ui_dir ] && mkdir -p $ui_dir
+  cd $ui_dir && wget $ui_dl_url && ok_msg "Download complete!"
   status_msg "Extracting archive ..."
-  unzip -q -o *.zip && ok_msg "Done!"
-  ### write mainsail version to file for update check reasons
-  status_msg "Writing Mainsail version to file ..."
-  get_mainsail_ver && echo "$MAINSAIL_VERSION" > $MAINSAIL_DIR/version && ok_msg "Done!"
-  #delete downloaded zip
-  status_msg "Remove downloaded archive ..."
-  rm -rf *.zip && ok_msg "Done!" && ok_msg "Mainsail installation complete!"
-  echo
-}
-
-fluidd_setup(){
-  #get fluidd download url
-  FLUIDD_DL_URL=$(curl -s https://api.github.com/repositories/295836951/releases/latest | grep browser_download_url | cut -d'"' -f4)
-  #clean up an existing fluidd folder
-  [ -d $FLUIDD_DIR ] && rm -rf $FLUIDD_DIR
-  #create fresh fluidd folder and download fluidd
-  mkdir $FLUIDD_DIR && cd $FLUIDD_DIR
-  status_msg "Downloading Fluidd $FLUIDD_VERSION ..."
-  wget $FLUIDD_DL_URL && ok_msg "Download complete!"
-  #extract archive
-  status_msg "Extracting archive ..."
-  unzip -q -o *.zip && ok_msg "Done!"
-  #write fluidd version to file for update check reasons
-  status_msg "Writing Fluidd version to file ..."
-  get_fluidd_ver && echo $FLUIDD_VERSION > $FLUIDD_DIR/version && ok_msg "Done!"
-  #patch moonraker.conf to apply cors domains if needed
-  backup_moonraker_conf
-  patch_moonraker
-  #delete downloaded zip
-  status_msg "Remove downloaded archive ..."
-  rm -rf *.zip && ok_msg "Done!" && ok_msg "Fluidd installation complete!"
-  echo
+  unzip -q -o *.zip
+  #more unzipping needed when installing dwc2
+  if [[ $ui == dwc2 ]]; then
+    for f_ in $(find . | grep '.gz'); do gunzip -f ${f_}; done
+  fi
+  status_msg "Writing version to file ..." && echo $ui_version > $ui_dir/version && ok_msg "Done!"
+  #patch moonraker.conf to apply cors domains if needed (currently only used by Fluidd)
+  if [[ $ui == fluidd ]]; then
+    backup_moonraker_conf && patch_moonraker
+  fi
+  status_msg "Remove downloaded archive ..." && rm -rf *.zip && ok_msg "Installation complete!"
 }
 
 patch_moonraker(){

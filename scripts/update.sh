@@ -106,13 +106,13 @@ update_dwc2(){
 update_mainsail(){
   bb4u "mainsail"
   status_msg "Updating Mainsail ..."
-  mainsail_setup
+  select_klipper_ui "mainsail" && install_ui
 }
 
 update_fluidd(){
   bb4u "fluidd"
   status_msg "Updating Fluidd ..."
-  fluidd_setup
+  select_klipper_ui "fluidd" && install_ui
 }
 
 update_moonraker(){

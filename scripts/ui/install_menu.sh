@@ -41,13 +41,13 @@ install_menu(){
       4)
         clear
         print_header
-        install_mainsail
+        install_routine_klipper_ui "mainsail"
         print_msg && clear_msg
         install_ui;;
       5)
         clear
         print_header
-        install_fluidd
+        install_routine_klipper_ui "fluidd"
         print_msg && clear_msg
         install_ui;;
       6)

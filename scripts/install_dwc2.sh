@@ -69,37 +69,30 @@ get_user_selections_dwc2(){
         print_msg && clear_msg;;
     esac
   done
-  #user selection for printer.cfg
-  if [ "$PRINTER_CFG_FOUND" = "false" ]; then
-    while true; do
-      echo
-      top_border
-      echo -e "|         ${red}WARNING! - No printer.cfg was found!${default}          |"
-      hr
-      echo -e "|  KIAUH can create a minimal printer.cfg with only the |"
-      echo -e "|  necessary config entries if you wish.                |"
-      echo -e "|                                                       |"
-      echo -e "|  Please be aware, that this option will ${red}NOT${default} create a  |"
-      echo -e "|  fully working printer.cfg for you!                   |"
-      bottom_border
-      read -p "${cyan}###### Create a default printer.cfg? (Y/n):${default} " yn
-      case "$yn" in
-        Y|y|Yes|yes|"")
-          echo -e "###### > Yes"
-          SEL_DEF_CFG="true"
-          break;;
-        N|n|No|no)
-          echo -e "###### > No"
-          SEL_DEF_CFG="false"
-          break;;
-        *)
-          print_unkown_cmd
-          print_msg && clear_msg;;
-      esac
-    done
-  fi
+  #user selection for minimal printer.cfg if no printer.cfg file was found
+  create_minimal_cfg_dialog
   #ask user to install reverse proxy
-  dwc2_reverse_proxy_dialog
+  while true; do
+    echo
+    top_border
+    echo -e "|  If you want to have a nicer URL or simply need/want  | "
+    echo -e "|  DWC2 to run on port 80 (http's default port) you     | "
+    echo -e "|  can set up a reverse proxy to run DWC2 on port 80.   | "
+    bottom_border
+    read -p "${cyan}###### Do you want to set up a reverse proxy now? (y/N):${default} " yn
+    case "$yn" in
+      Y|y|Yes|yes)
+        echo -e "###### > Yes"
+        dwc2_port_check
+        break;;
+      N|n|No|no|"")
+        echo -e "###### > No"
+        break;;
+      *)
+        print_unkown_cmd
+        print_msg && clear_msg;;
+    esac
+  done
   #ask to change hostname
   [ "$SET_NGINX_CFG" = "true" ] && create_custom_hostname
   #ask user to disable octoprint when such installed service was found
@@ -198,28 +191,6 @@ setup_printer_config_dwc2(){
 
 #############################################################
 #############################################################
-
-dwc2_reverse_proxy_dialog(){
-  echo
-  top_border
-  echo -e "|  If you want to have a nicer URL or simply need/want  | "
-  echo -e "|  DWC2 to run on port 80 (http's default port) you     | "
-  echo -e "|  can set up a reverse proxy to run DWC2 on port 80.   | "
-  bottom_border
-  while true; do
-    read -p "${cyan}###### Do you want to set up a reverse proxy now? (y/N):${default} " yn
-    case "$yn" in
-      Y|y|Yes|yes)
-        dwc2_port_check
-        break;;
-      N|n|No|no|"")
-        break;;
-      *)
-        print_unkown_cmd
-        print_msg && clear_msg;;
-    esac
-  done
-}
 
 dwc2_port_check(){
   if [ "$DWC2_ENABLED" = "false" ]; then

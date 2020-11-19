@@ -351,8 +351,8 @@ read_remote_mainsail_version(){
   if [[ ! $(dpkg-query -f'${Status}' --show curl 2>/dev/null) = *\ installed ]]; then
     MAINSAIL_REMOTE_VER="${red}-----${default}"
   else
-    get_mainsail_ver
-    MAINSAIL_REMOTE_VER=$MAINSAIL_VERSION
+    select_klipper_ui "mainsail" && get_klipper_ui_version
+    MAINSAIL_REMOTE_VER=$ui_version
   fi
 }
 
@@ -390,8 +390,8 @@ read_remote_fluidd_version(){
   if [[ ! $(dpkg-query -f'${Status}' --show curl 2>/dev/null) = *\ installed ]]; then
     FLUIDD_REMOTE_VER="${red}-----${default}"
   else
-    get_fluidd_ver
-    FLUIDD_REMOTE_VER=$FLUIDD_VERSION
+    select_klipper_ui "fluidd" && get_klipper_ui_version
+    FLUIDD_REMOTE_VER=$ui_version
   fi
 }
 
