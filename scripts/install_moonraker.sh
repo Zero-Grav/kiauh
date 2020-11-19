@@ -73,36 +73,9 @@ system_check_moonraker(){
 }
 
 get_user_selections_moonraker(){
-  #user selection for printer.cfg
-  if [ "$PRINTER_CFG_FOUND" = "false" ]; then
-    while true; do
-      echo
-      top_border
-      echo -e "|         ${red}WARNING! - No printer.cfg was found!${default}          |"
-      hr
-      echo -e "|  KIAUH can create a minimal printer.cfg with only the |"
-      echo -e "|  recommended Moonraker config entries if you wish.    |"
-      echo -e "|                                                       |"
-      echo -e "|  Please be aware, that this option will ${red}NOT${default} create a  |"
-      echo -e "|  fully working printer.cfg for you!                   |"
-      bottom_border
-      read -p "${cyan}###### Create a default printer.cfg? (Y/n):${default} " yn
-      case "$yn" in
-        Y|y|Yes|yes|"")
-          echo -e "###### > Yes"
-          SEL_DEF_CFG="true"
-          break;;
-        N|n|No|no)
-          echo -e "###### > No"
-          SEL_DEF_CFG="false"
-          break;;
-        *)
-          print_unkown_cmd
-          print_msg && clear_msg;;
-      esac
-    done
-  fi
-  #user selection for moonraker.log symlink
+  #user selection for minimal printer.cfg if no printer.cfg file was found
+  create_minimal_cfg_dialog
+  #user selection for klippy.log symlink
   if [ "$KLIPPY_SL_FOUND" = "false" ]; then
     while true; do
       echo
@@ -142,7 +115,7 @@ get_user_selections_moonraker(){
       esac
     done
   fi
-  #ask user for more trusted clients
+  #ask user if he wants to add more trusted clients
     while true; do
       echo
       top_border

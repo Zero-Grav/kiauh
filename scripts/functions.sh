@@ -260,10 +260,46 @@ install_gcode_shell_command(){
   restart_klipper
 }
 
+create_minimal_cfg_dialog(){
+  if [ "$PRINTER_CFG_FOUND" = "false" ]; then
+    while true; do
+      echo
+      top_border
+      echo -e "|         ${red}WARNING! - No printer.cfg was found!${default}          |"
+      hr
+      echo -e "|  KIAUH can create a printer.cfg with only a minimal   |"
+      echo -e "|  amount of config entries if you wish.                |"
+      echo -e "|                                                       |"
+      echo -e "|  Please be aware, that this option will ${red}NOT${default} create a  |"
+      echo -e "|  fully working printer.cfg for you!                   |"
+      bottom_border
+      read -p "${cyan}###### Create a default printer.cfg? (Y/n):${default} " yn
+      case "$yn" in
+        Y|y|Yes|yes|"")
+          echo -e "###### > Yes"
+          SEL_DEF_CFG="true"
+          break;;
+        N|n|No|no)
+          echo -e "###### > No"
+          SEL_DEF_CFG="false"
+          break;;
+        *)
+          print_unkown_cmd
+          print_msg && clear_msg;;
+      esac
+    done
+  fi
+}
+
 create_minimal_cfg(){
   #create a minimal default config
   if [ "$SEL_DEF_CFG" = "true" ]; then
-		cat <<- EOF >> $PRINTER_CFG
+    unset SEL_DEF_CFG
+    #first creates all subfolders if they don't exist
+    loc=$(echo $PRINTER_CFG | sed 's/\/printer.cfg//')
+    [ ! -d $loc ] && mkdir -p $loc
+    #then create the minimal printer.cfg
+    cat <<- EOF >> $PRINTER_CFG
 		[mcu]
 		serial: </dev/serial/by-id/your-mcu>
 
